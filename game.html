@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二進位單字解密 - 點擊版</title>
+    <style>
+        :root {
+            --primary: #3498db;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --dark: #2c3e50;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 900px; width: 100%; }
+        
+        h1 { color: var(--dark); margin-bottom: 10px; }
+        .instruction { color: #666; margin-bottom: 20px; }
+
+        /* 遊戲區域 */
+        .game-area { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin: 30px 0; }
+        .char-card { display: flex; flex-direction: column; align-items: center; background: #fff; border: 2px solid #eee; padding: 15px; border-radius: 10px; transition: 0.3s; }
+        
+        /* 位元按鈕樣式 */
+        .bit-row { display: flex; flex-direction: column; gap: 5px; }
+        .bit-btn {
+            width: 45px; height: 45px; border: none; border-radius: 8px;
+            font-size: 1.2rem; font-weight: bold; cursor: pointer;
+            transition: all 0.2s; background: #ecf0f1; color: #bdc3c7;
+        }
+        .bit-btn.active { background: var(--dark); color: white; transform: scale(1.05); }
+        .bit-weight { font-size: 0.7rem; color: #95a5a6; text-align: center; margin-bottom: 2px; }
+
+        /* 結果顯示 */
+        .letter-display {
+            margin-top: 15px; font-size: 2rem; font-weight: 800;
+            width: 50px; height: 50px; display: flex; align-items: center;
+            justify-content: center; border-bottom: 4px solid #ddd;
+        }
+        .letter-display.correct { color: var(--success); border-bottom-color: var(--success); }
+        .letter-display.wrong { color: var(--danger); border-bottom-color: var(--danger); }
+
+        .controls { text-align: center; margin-top: 20px; }
+        .btn-next { padding: 12px 30px; font-size: 1rem; background: var(--primary); color: white; border: none; border-radius: 25px; cursor: pointer; box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3); }
+        .btn-next:hover { background: #2980b9; }
+    </style>
+</head>
+<body>
+
+    <h1>🎮 二進位拼字挑戰</h1>
+    <p class="instruction">點擊方塊切換 0/1，拼出目標單字！(A=1, B=2 ...)</p>
+
+    <div class="container">
+        <h2 style="text-align: center;">目標單字：<span id="target-word" style="color: var(--primary); letter-spacing: 5px;">---</span></h2>
+        
+        <div id="game-board" class="game-area"></div>
+
+        <div class="controls">
+            <button class="btn-next" onclick="loadNewWord()">下一題</button>
+        </div>
+    </div>
+
+    <script>
+        const wordBank = ["CAT", "DOG", "FISH", "BIRD", "KING", "JAZZ", "WEB", "COOL"];
+        let currentWord = "";
+        const weights = [16, 8, 4, 2, 1];
+
+        function loadNewWord() {
+            currentWord = wordBank[Math.floor(Math.random() * wordBank.length)];
+            document.getElementById('target-word').innerText = currentWord;
+            renderBoard();
+        }
+
+        function renderBoard() {
+            const board = document.getElementById('game-board');
+            board.innerHTML = '';
+
+            currentWord.split('').forEach((char, charIdx) => {
+                const targetVal = char.charCodeAt(0) - 64;
+                
+                const card = document.createElement('div');
+                card.className = 'char-card';
+
+                const bitRow = document.createElement('div');
+                bitRow.className = 'bit-row';
+
+                // 建立 5 個位元按鈕
+                for (let i = 0; i < 5; i++) {
+                    const weightWrapper = document.createElement('div');
+                    const weightHint = document.createElement('div');
+                    weightHint.className = 'bit-weight';
+                    weightHint.innerText = weights[i];
+
+                    const btn = document.createElement('button');
+                    btn.className = 'bit-btn';
+                    btn.innerText = '0';
+                    btn.dataset.weight = weights[i];
+                    btn.onclick = function() {
+                        this.innerText = this.innerText === '0' ? '1' : '0';
+                        this.classList.toggle('active');
+                        calculateChar(card, targetVal);
+                    };
+
+                    weightWrapper.appendChild(weightHint);
+                    weightWrapper.appendChild(btn);
+                    bitRow.appendChild(weightWrapper);
+                }
+
+                const display = document.createElement('div');
+                display.className = 'letter-display';
+                display.innerText = '?';
+
+                card.appendChild(bitRow);
+                card.appendChild(display);
+                board.appendChild(card);
+            });
+        }
+
+        function calculateChar(card, targetVal) {
+            const btns = card.querySelectorAll('.bit-btn');
+            const display = card.querySelector('.letter-display');
+            let sum = 0;
+
+            btns.forEach(btn => {
+                if (btn.classList.contains('active')) {
+                    sum += parseInt(btn.dataset.weight);
+                }
+            });
+
+            if (sum === 0) {
+                display.innerText = '?';
+                display.className = 'letter-display';
+            } else if (sum > 26) {
+                display.innerText = '⚠️';
+                display.className = 'letter-display wrong';
+            } else {
+                const char = String.fromCharCode(64 + sum);
+                display.innerText = char;
+                display.className = 'letter-display ' + (sum === targetVal ? 'correct' : 'wrong');
+            }
+        }
+
+        // 初始載入
+        loadNewWord();
+    </script>
+</body>
+</html>
